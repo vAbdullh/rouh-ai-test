@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>روح - المساعدة الذكية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="h-screen w-screen bg-gradient-to-b from-white to-purple-100 flex flex-col font-sans"
+  >
+    <!-- Header -->
+    <header class="py-4 text-center border-b border-gray-300 bg-white shadow">
+      <div class="text-3xl">✨</div>
+      <h1 class="text-xl font-semibold text-gray-800 mt-1">
+        روح - مساعدتك الذكية
+      </h1>
+    </header>
+
+    <!-- User Info Form -->
+    <div
+      id="user-form"
+      class="flex-1 flex flex-col items-center justify-center px-4 space-y-4"
+    >
+      <input
+        type="text"
+        id="name"
+        placeholder="الاسم"
+        class="w-full max-w-md px-4 py-3 border rounded-md text-right"
+      />
+      <input
+        type="number"
+        id="age"
+        placeholder="العمر"
+        class="w-full max-w-md px-4 py-3 border rounded-md text-right"
+      />
+      <input
+        type="number"
+        id="week"
+        placeholder="أسبوع الحمل"
+        class="w-full max-w-md px-4 py-3 border rounded-md text-right"
+      />
+      <button
+        onclick="startChat()"
+        class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700"
+      >
+        ابدئي المحادثة
+      </button>
+    </div>
+
+    <!-- Chat Section -->
+    <main
+      id="chat-section"
+      class="flex-1 flex flex-col hidden container mx-auto"
+    >
+      <div
+        id="chat-messages"
+        class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-32"
+      >
+        <!-- Messages go here -->
+      </div>
+
+      <!-- Chat Input -->
+      <div class="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3">
+        <div class="max-w-3xl mx-auto flex items-center gap-2">
+          <input
+            type="text"
+            id="user-input"
+            placeholder="اكتبي رسالتك هنا..."
+            class="flex-1 px-4 py-3 border rounded-md text-right"
+          />
+          <button
+            onclick="handleSend()"
+            class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+          >
+            إرسال
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+      const DEEPSEEK_API_KEY = "sk-af24e259f4424f988b509644ebb7b7e7"; // 🛑 Replace with your actual key
+      let conversationHistory = [];
+      let user = { name: "", age: "", week: "" };
+
+      function getInitialPrompt(name, age, week) {
+        return `أنت "روح"، مساعدة ذكية متخصصة في دعم النساء خلال رحلة الحمل وما بعد الولادة. 
+- تحدثي بلغة بسيطة وداعمة
+- قدمي إجابات قصيرة وواضحة
+- ركزي على الجوانب النفسية والجسدية
+- استخدمي المعلومات التالية عن المستخدمة:
+  الاسم: ${name}
+  العمر: ${age}
+  أسبوع الحمل: ${week}
+
+مجالات المساعدة:
+1. متابعة تطور الحمل (أعراض، تغيرات جسدية، نمو الجنين)
+2. الدعم النفسي (التقلبات المزاجية، القلق، اكتئاب ما بعد الولادة)
+3. نصائح رعاية الطفل الأساسية
+4. تذكير بالرعاية الطبية عند الحاجة`;
+      }
+
+      function getFollowupPrompt(name, age, week, message) {
+        return `أنت "روح" المساعدة الذكية للحمل. استمري في أسلوبك البسيط والداعم.
+
+معلومات المستخدمة:
+- الاسم: ${name}
+- العمر: ${age}
+- أسبوع الحمل: ${week}
+
+رسالة المستخدمة:
+"${message}"`;
+      }
+
+      function startChat() {
+        user.name = document.getElementById("name").value.trim();
+        user.age = document.getElementById("age").value.trim();
+        user.week = document.getElementById("week").value.trim();
+
+        if (!user.name || !user.age || !user.week) {
+          alert("يرجى تعبئة جميع الحقول");
+          return;
+        }
+
+        document.getElementById("user-form").classList.add("hidden");
+        document.getElementById("chat-section").classList.remove("hidden");
+
+        addMessage("assistant", "مرحباً، أنا روح! كيف أستطيع مساعدتك اليوم؟");
+      }
+
+      function addMessage(role, content) {
+        const chatContainer = document.getElementById("chat-messages");
+        const msg = document.createElement("div");
+        msg.className = `max-w-md mx-4 my-2 ${
+          role === "user" ? "ml-auto" : "mr-auto"
+        }`;
+        msg.innerHTML = `
+        <div class="${
+          role === "user"
+            ? "bg-blue-50 text-blue-900 border border-blue-200"
+            : "bg-purple-50 text-purple-900 border border-purple-200"
+        } p-4 rounded-lg shadow-sm">${content}</div>
+      `;
+        chatContainer.appendChild(msg);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      async function handleSend() {
+        const input = document.getElementById("user-input");
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = "";
+        addMessage("user", text);
+
+        const messages = [];
+
+        if (conversationHistory.length === 0) {
+          messages.push({
+            role: "system",
+            content: getInitialPrompt(user.name, user.age, user.week),
+          });
+        } else {
+          messages.push(...conversationHistory);
+        }
+
+        messages.push({
+          role: "user",
+          content: getFollowupPrompt(user.name, user.age, user.week, text),
+        });
+
+        try {
+          const res = await fetch(
+            "https://api.deepseek.com/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+              },
+              body: JSON.stringify({
+                model: "deepseek-chat",
+                messages,
+              }),
+            }
+          );
+
+          const data = await res.json();
+          const aiResponse =
+            data.choices?.[0]?.message?.content || "لم أتمكن من الرد حالياً.";
+          conversationHistory = [
+            ...messages,
+            { role: "assistant", content: aiResponse },
+          ].slice(-10);
+
+          addMessage("assistant", aiResponse);
+        } catch (err) {
+          console.error(err);
+          addMessage("assistant", "حدث خطأ أثناء التواصل مع الذكاء الاصطناعي.");
+        }
+      }
+    </script>
+  </body>
+</html>
