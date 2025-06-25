@@ -79,6 +79,40 @@
       </div>
     </main>
 
+    <!-- CSS -->
+    <style>
+      .typing-indicator {
+        display: inline-block;
+        position: relative;
+        width: 60px;
+        height: 30px;
+      }
+      .typing-dot {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #8b5cf6;
+        animation: typing-animation 1.4s infinite ease-in-out;
+      }
+      .typing-dot:nth-child(1) {
+        left: 8px;
+        animation-delay: 0s;
+      }
+      .typing-dot:nth-child(2) {
+        left: 24px;
+        animation-delay: 0.2s;
+      }
+      .typing-dot:nth-child(3) {
+        left: 40px;
+        animation-delay: 0.4s;
+      }
+      @keyframes typing-animation {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-8px); }
+      }
+    </style>
+
     <!-- JavaScript -->
     <script>
       const DEEPSEEK_API_KEY = "sk-af24e259f4424f988b509644ebb7b7e7"; // 🛑 Replace with your actual key
@@ -155,6 +189,21 @@
         input.value = "";
         addMessage("user", text);
 
+        // Show typing indicator
+        const typingIndicator = document.createElement("div");
+        typingIndicator.className = "max-w-md mr-auto my-2";
+        typingIndicator.innerHTML = `
+          <div class="bg-purple-50 p-4 rounded-lg">
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        `;
+        document.getElementById("chat-messages").appendChild(typingIndicator);
+        document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
+
         const messages = [];
 
         if (conversationHistory.length === 0) {
@@ -195,9 +244,12 @@
             { role: "assistant", content: aiResponse },
           ].slice(-10);
 
+          // Remove typing indicator before showing response
+          document.getElementById("chat-messages").removeChild(typingIndicator);
           addMessage("assistant", aiResponse);
         } catch (err) {
           console.error(err);
+          document.getElementById("chat-messages").removeChild(typingIndicator);
           addMessage("assistant", "حدث خطأ أثناء التواصل مع الذكاء الاصطناعي.");
         }
       }
